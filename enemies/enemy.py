@@ -1,4 +1,7 @@
 class Enemy:
+    """
+    класс проработки противников
+    """
     def __init__(self):
         pass
 

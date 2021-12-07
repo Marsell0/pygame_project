@@ -1,4 +1,7 @@
 class Tower:
+    """
+    класс проработки башен
+    """
     def __init__(self):
         pass
 
