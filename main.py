@@ -1,4 +1,5 @@
 import pygame
+import pygame_gui
 import sys
 
 # создаём группы спрайтов
@@ -9,14 +10,19 @@ tiles_sprites = pygame.sprite.Group()
 icon_sprites = pygame.sprite.Group()
 
 
+def terminate():  # функция для корректного выхода из программы
+    pygame.quit()
+    sys.exit()
+
+
 def load_tile(name):  # функция для загрузки спрайтов
-    fullname = f'map/tile/{name}'
+    fullname = f'data/map/tile/{name}'
     image = pygame.image.load(fullname)
     return image
 
 
 def load_icon(name):  # функция для загрузки иконок
-    fullname = f'map/icons/{name}'
+    fullname = f'data/map/icons/{name}'
     image = pygame.image.load(fullname)
     return image
 
@@ -48,12 +54,8 @@ class Game:
         self.height = 550
         self.fps = 60
         self.win = pygame.display.set_mode((self.weight, self.height))
-        pygame.display.set_caption('Pixel Defense')
+        pygame.display.set_caption('Net Guardians')
         self.clock = pygame.time.Clock()
-
-    def terminate(self):  # функция для корректного выхода из программы
-        pygame.quit()
-        sys.exit()
 
     def run(self):  # основной игровой цикл
         running = True
@@ -70,10 +72,10 @@ class Game:
             pygame.display.flip()
             self.clock.tick(self.fps)
 
-        self.terminate()
+        terminate()
 
     def load_lvl(self, name):
-        filename = f'map/levels/{name}'
+        filename = f'data/map/levels/{name}'
         # читаем уровень, убирая символы перевода строки
         with open(filename, 'r') as mapFile:
             level_map = [line.strip() for line in mapFile]
@@ -104,6 +106,71 @@ class Game:
         return x, y  # возврат размера поля в клетках
 
 
+class Menu():
+    def __init__(self):
+        self.size = self.width, self.height = 1280, 720
+        self.win = pygame.display.set_mode(self.size)
+        pygame.display.set_caption('Net Guardians')
+        self.clock = pygame.time.Clock()
+        self.fps = 60
+
+    def start_screen(self):
+        pygame.init()
+
+        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        self.win.blit(fon, (0, 0))
+
+        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
+
+        select_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 275), (290, 60)),
+                                                    text='SELECT LEVEL',
+                                                    manager=manager)
+        story_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 335), (290, 60)),
+                                                     text='MAIN STORY',
+                                                     manager=manager)
+        howtoplay_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 395), (290, 60)),
+                                                     text='HOW TO PLAY',
+                                                     manager=manager)
+        leaderboard_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 455), (290, 60)),
+                                                     text='LEADERBOARD',
+                                                     manager=manager)
+        exit_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
+                                                     text='EXIT',
+                                                     manager=manager)
+
+        clock = pygame.time.Clock()
+        running = True
+
+        while running:
+            time_delta = clock.tick(60) / 1000.0
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+
+                if event.type == pygame.USEREVENT:
+                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                        if event.ui_element == select_button:
+                            Game().run()
+                            terminate()
+                        if event.ui_element == story_button:
+                            pass
+                        if event.ui_element == howtoplay_button:
+                            pass
+                        if event.ui_element == leaderboard_button:
+                            pass
+                        if event.ui_element == exit_button:
+                            terminate()
+
+                manager.process_events(event)
+
+            manager.update(time_delta)
+
+            self.win.blit(fon, (0, 0))
+            manager.draw_ui(self.win)
+
+            pygame.display.update()
+
+
 class Tile(pygame.sprite.Sprite):
     """
     класс обработки тайлов
@@ -127,4 +194,4 @@ class Icon(pygame.sprite.Sprite):
 
 
 if __name__ == '__main__':
-    Game().run()
+    Menu().start_screen()
