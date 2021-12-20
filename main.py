@@ -44,8 +44,8 @@ class Game:
     """
     def __init__(self):
         #  создаём окно "Меню"
-        self.weight = 800
-        self.height = 600
+        self.weight = 550
+        self.height = 550
         self.fps = 60
         self.win = pygame.display.set_mode((self.weight, self.height))
         pygame.display.set_caption('Pixel Defense')
@@ -58,27 +58,31 @@ class Game:
     def run(self):  # основной игровой цикл
         running = True
         self.win.fill(pygame.Color('black'))
+        level_x, level_y = self.draw_lvl(self.load_lvl('lvl_1.txt'))
 
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
-            tiles_sprites.draw(self.win)
-            enemies_sprites.draw(self.win)
+            all_sprites.draw(self.win)
 
             pygame.display.flip()
             self.clock.tick(self.fps)
 
         self.terminate()
 
-    def load_lvl(self, name):  # загрузка текстового файла с уровнем
-        fullname = f'map/levels/{name}'
-        with open(fullname, 'r') as lvl_file:
-            lvl_map = []
-            for line in lvl_file:
-                lvl_map.append(line.strip())
-        return lvl_map
+    def load_lvl(self, name):
+        filename = f'map/levels/{name}'
+        # читаем уровень, убирая символы перевода строки
+        with open(filename, 'r') as mapFile:
+            level_map = [line.strip() for line in mapFile]
+
+        # и подсчитываем максимальную длину
+        max_width = max(map(len, level_map))
+
+        # дополняем каждую строку пустыми клетками ('.')
+        return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
     def draw_lvl(self, lvl_map):  # прорисовка загруженого уровня
         x, y = None, None
@@ -90,7 +94,7 @@ class Game:
                     Tile('way', x, y)
                 elif lvl_map[x][y] == '@':
                     Tile('wall', x, y)
-                    Icon('can_build_tower', x, y)
+                    Icon('can_build', x, y)
                 elif lvl_map[x][y] == '!':
                     Tile('way', x, y)
                     Icon('monster_portal', x, y)
