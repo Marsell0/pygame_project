@@ -125,7 +125,7 @@ class Menu():
         self.bg_music.set_volume(0.1)
         self.bg_music.play()
 
-        self.select_snd = pygame.mixer.Sound('select.wav')
+        self.select_snd = pygame.mixer.Sound('select.mp3')
         self.select_snd.set_volume(0.2)
 
     def start_screen(self):
