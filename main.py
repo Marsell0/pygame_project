@@ -57,6 +57,11 @@ class Game:
         pygame.display.set_caption('Net Guardians')
         self.clock = pygame.time.Clock()
 
+        pygame.mixer.init()
+        self.bg_music = pygame.mixer.Sound('bg_level_music.mp3')
+        self.bg_music.set_volume(0.05)
+        self.bg_music.play()
+
     def run(self):  # основной игровой цикл
         running = True
         self.win.fill(pygame.Color('black'))
@@ -114,8 +119,18 @@ class Menu():
         self.clock = pygame.time.Clock()
         self.fps = 60
 
+        pygame.mixer.init()
+
+        self.bg_music = pygame.mixer.Sound('bg_menu_music.mp3')
+        self.bg_music.set_volume(0.1)
+        self.bg_music.play()
+
+        self.select_snd = pygame.mixer.Sound('select.wav')
+        self.select_snd.set_volume(0.2)
+
     def start_screen(self):
         pygame.init()
+        pygame.mixer.init()
 
         fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
         self.win.blit(fon, (0, 0))
@@ -138,32 +153,193 @@ class Menu():
                                                      text='EXIT',
                                                      manager=manager)
 
-        clock = pygame.time.Clock()
         running = True
 
         while running:
-            time_delta = clock.tick(60) / 1000.0
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
-
                 if event.type == pygame.USEREVENT:
                     if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                         if event.ui_element == select_button:
-                            Game().run()
+                            self.select_snd.play()
+                            self.select_level()
                             terminate()
                         if event.ui_element == story_button:
-                            pass
+                            self.select_snd.play()
+                            self.story()
+                            terminate()
                         if event.ui_element == howtoplay_button:
-                            pass
+                            self.select_snd.play()
+                            self.how_to_play()
+                            terminate()
                         if event.ui_element == leaderboard_button:
-                            pass
+                            self.select_snd.play()
+                            self.leaderboard()
+                            terminate()
                         if event.ui_element == exit_button:
+                            self.select_snd.play()
                             terminate()
 
                 manager.process_events(event)
 
-            manager.update(time_delta)
+            manager.update(self.clock.tick(self.fps))
+
+            self.win.blit(fon, (0, 0))
+            manager.draw_ui(self.win)
+
+            pygame.display.update()
+
+    def leaderboard(self):
+        pygame.init()
+
+        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        self.win.blit(fon, (0, 0))
+
+        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
+
+        test_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 375), (290, 60)),
+                                                   text='Leaderboard в разработке',
+                                                   manager=manager)
+
+        back_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
+                                                   text='BACK',
+                                                   manager=manager)
+
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                if event.type == pygame.USEREVENT:
+                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                        if event.ui_element == back_button:
+                            self.select_snd.play()
+                            self.start_screen()
+                            terminate()
+
+                manager.process_events(event)
+
+            manager.update(self.clock.tick(self.fps))
+
+            self.win.blit(fon, (0, 0))
+            manager.draw_ui(self.win)
+
+            pygame.display.update()
+
+    def select_level(self):
+        pygame.init()
+
+        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        self.win.blit(fon, (0, 0))
+
+        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
+
+        level_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 375), (290, 60)),
+                                                   text='Level 1',
+                                                   manager=manager)
+
+        back_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
+                                                   text='BACK',
+                                                   manager=manager)
+
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                if event.type == pygame.USEREVENT:
+                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                        if event.ui_element == back_button:
+                            self.select_snd.play()
+                            self.start_screen()
+                            terminate()
+                        if event.ui_element == level_button:
+                            self.select_snd.play()
+                            self.bg_music.stop()
+                            Game().run()
+                            terminate()
+
+                manager.process_events(event)
+
+            manager.update(self.clock.tick(self.fps))
+
+            self.win.blit(fon, (0, 0))
+            manager.draw_ui(self.win)
+
+            pygame.display.update()
+
+    def how_to_play(self):
+        pygame.init()
+
+        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        self.win.blit(fon, (0, 0))
+
+        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
+
+        test_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 375), (290, 60)),
+                                                   text='How to play в разработке',
+                                                   manager=manager)
+
+        back_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
+                                                   text='BACK',
+                                                   manager=manager)
+
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                if event.type == pygame.USEREVENT:
+                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                        if event.ui_element == back_button:
+                            self.select_snd.play()
+                            self.start_screen()
+                            terminate()
+
+                manager.process_events(event)
+
+            manager.update(self.clock.tick(self.fps))
+
+            self.win.blit(fon, (0, 0))
+            manager.draw_ui(self.win)
+
+            pygame.display.update()
+
+    def story(self):
+        pygame.init()
+
+        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        self.win.blit(fon, (0, 0))
+
+        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
+
+        test_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 375), (290, 60)),
+                                                   text='please stand by',
+                                                   manager=manager)
+
+        back_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
+                                                   text='BACK',
+                                                   manager=manager)
+
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                if event.type == pygame.USEREVENT:
+                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                        if event.ui_element == back_button:
+                            self.select_snd.play()
+                            self.start_screen()
+                            terminate()
+                manager.process_events(event)
+
+            manager.update(self.clock.tick(self.fps))
 
             self.win.blit(fon, (0, 0))
             manager.draw_ui(self.win)
