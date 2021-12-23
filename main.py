@@ -58,7 +58,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         pygame.mixer.init()
-        self.bg_music = pygame.mixer.Sound('bg_level_music.mp3')
+        self.bg_music = pygame.mixer.Sound('data/map/levels/bg_level_music.mp3')
         self.bg_music.set_volume(0.05)
         self.bg_music.play()
 
@@ -121,11 +121,11 @@ class Menu():
 
         pygame.mixer.init()
 
-        self.bg_music = pygame.mixer.Sound('bg_menu_music.mp3')
+        self.bg_music = pygame.mixer.Sound('data/menu/bg_menu_music.mp3')
         self.bg_music.set_volume(0.1)
         self.bg_music.play()
 
-        self.select_snd = pygame.mixer.Sound('select.mp3')
+        self.select_snd = pygame.mixer.Sound('data/menu/select.mp3')
         self.select_snd.set_volume(0.2)
 
     def start_screen(self):
@@ -193,7 +193,7 @@ class Menu():
     def leaderboard(self):
         pygame.init()
 
-        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        fon = pygame.transform.scale(pygame.image.load('data/other_win.png'), (self.width, self.height))
         self.win.blit(fon, (0, 0))
 
         manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
@@ -231,7 +231,7 @@ class Menu():
     def select_level(self):
         pygame.init()
 
-        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        fon = pygame.transform.scale(pygame.image.load('data/other_win.png'), (self.width, self.height))
         self.win.blit(fon, (0, 0))
 
         manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
@@ -274,7 +274,7 @@ class Menu():
     def how_to_play(self):
         pygame.init()
 
-        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        fon = pygame.transform.scale(pygame.image.load('data/other_win.png'), (self.width, self.height))
         self.win.blit(fon, (0, 0))
 
         manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
@@ -312,7 +312,7 @@ class Menu():
     def story(self):
         pygame.init()
 
-        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
+        fon = pygame.transform.scale(pygame.image.load('data/other_win.png'), (self.width, self.height))
         self.win.blit(fon, (0, 0))
 
         manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
