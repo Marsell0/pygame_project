@@ -1,6 +1,9 @@
 import pygame
 import pygame_gui
 import sys
+import os
+from data.enemies.enemy import Enemy, DrawEnemy
+from data.menu.menu import Menu
 
 # создаём группы спрайтов
 all_sprites = pygame.sprite.Group()
@@ -49,28 +52,40 @@ class Game:
     основной игровой класс
     """
     def __init__(self):
-        #  создаём окно "Меню"
-        self.weight = 550
-        self.height = 550
+        #  создаём окно с уровнем
+        self.size = self.weight, self.height = 750, 550
         self.fps = 60
+        self.bg_color = (26, 28, 44)
+        self.shop = pygame.Rect((0, 0), (550, 350))
         self.win = pygame.display.set_mode((self.weight, self.height))
         pygame.display.set_caption('Net Guardians')
         self.clock = pygame.time.Clock()
+        self.pause = False
 
+        self.path_for_enemies = []  # список с координатами пути врагов
+
+        self.manager = pygame_gui.UIManager((self.weight, self.height), 'data/menu/theme.json')  # создание gui
+
+        # подключаем звуковое сопровождение
         pygame.mixer.init()
-        self.bg_music = pygame.mixer.Sound('data/map/levels/bg_level_music.mp3')
-        self.bg_music.set_volume(0.05)
-        self.bg_music.play()
+        pygame.mixer.music.load('data/map/levels/bg_level_music.mp3')
+        pygame.mixer.music.set_volume(0.05)
+        pygame.mixer.music.play(loops=-1)
 
     def run(self):  # основной игровой цикл
         running = True
-        self.win.fill(pygame.Color('black'))
+        self.win.fill(self.bg_color)
         level_x, level_y = self.draw_lvl(self.load_lvl('lvl_1.txt'))
 
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    terminate()
+                if event.type == pygame.K_ESCAPE:
+                    if self.pause:
+                        self.pause_off()
+                    if not self.pause:
+                        self.pause_on()
 
             all_sprites.draw(self.win)
 
@@ -79,8 +94,20 @@ class Game:
 
         terminate()
 
+    def shop(self):
+        pass
+
+    def pause_on(self):
+        select_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 275), (290, 60)),
+                                                     text='PAUSE',
+                                                     manager=self.manager)
+        self.pause = True
+
+    def pause_off(self):
+        self.pause = False
+
     def load_lvl(self, name):
-        filename = f'data/map/levels/{name}'
+        filename = f'data/map/levels/lvl_1/{name}'
         # читаем уровень, убирая символы перевода строки
         with open(filename, 'r') as mapFile:
             level_map = [line.strip() for line in mapFile]
@@ -108,10 +135,12 @@ class Game:
                 elif lvl_map[x][y] == '%':
                     Tile('way', x, y)
                     Icon('your_chest', x, y)
+                if lvl_map[x][y] == '.' or lvl_map[x][y] == '@' or lvl_map[x][y] == '%':
+                    self.path_for_enemies.append([x * 50 - 25, y * 50 - 25])
         return x, y  # возврат размера поля в клетках
 
 
-class Menu():
+class Menu:
     def __init__(self):
         self.size = self.width, self.height = 1280, 720
         self.win = pygame.display.set_mode(self.size)
@@ -121,9 +150,9 @@ class Menu():
 
         pygame.mixer.init()
 
-        self.bg_music = pygame.mixer.Sound('data/menu/bg_menu_music.mp3')
-        self.bg_music.set_volume(0.1)
-        self.bg_music.play()
+        pygame.mixer.music.load('data/menu/bg_menu_music.mp3')
+        pygame.mixer.music.set_volume(0.1)
+        pygame.mixer.music.play(loops=-1)
 
         self.select_snd = pygame.mixer.Sound('data/menu/select.mp3')
         self.select_snd.set_volume(0.2)
@@ -135,7 +164,7 @@ class Menu():
         fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
         self.win.blit(fon, (0, 0))
 
-        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
+        manager = pygame_gui.UIManager((1280, 720), 'data/menu/theme.json')
 
         select_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 275), (290, 60)),
                                                     text='SELECT LEVEL',
@@ -258,7 +287,7 @@ class Menu():
                             terminate()
                         if event.ui_element == level_button:
                             self.select_snd.play()
-                            self.bg_music.stop()
+                            pygame.mixer.music.stop()
                             Game().run()
                             terminate()
 

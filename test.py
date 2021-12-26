@@ -1,40 +1,7 @@
-import pygame
-import pygame_gui
+right_coords = []
 
-pygame.init()
+coords = [[4, 2], [5, 2], [6, 2], [7, 2], [0, 3], [1, 3], [2, 3], [3, 3], [4, 3], [7, 3], [2, 4], [4, 4], [5, 4], [7, 4], [8, 4], [2, 5], [4, 5], [7, 5], [1, 6], [2, 6], [4, 6], [5, 6], [7, 6], [8, 6], [9, 6], [2, 7], [3, 7], [5, 7], [6, 7], [9, 7], [2, 8], [3, 8], [4, 8], [5, 8], [9, 8], [9, 9]]
+for i in coords:
+    right_coords.append([i[0] * 50 - 25, i[1] * 50 - 25])
 
-pygame.display.set_caption('Quick Start')
-window_surface = pygame.display.set_mode((800, 600))
-
-background = pygame.Surface((800, 600))
-fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (800, 600))
-window_surface.blit(fon, (0, 0))
-
-manager = pygame_gui.UIManager((800, 600))
-
-hello_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((350, 275), (100, 50)),
-                                            text='Say Hello',
-                                            manager=manager)
-
-clock = pygame.time.Clock()
-is_running = True
-
-while is_running:
-    time_delta = clock.tick(60) / 1000.0
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            is_running = False
-
-        if event.type == pygame.USEREVENT:
-            if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                if event.ui_element == hello_button:
-                    print('Hello World!')
-
-        manager.process_events(event)
-
-    manager.update(time_delta)
-
-    window_surface.blit(fon, (0, 0))
-    manager.draw_ui(window_surface)
-
-    pygame.display.update()
+print(right_coords)
