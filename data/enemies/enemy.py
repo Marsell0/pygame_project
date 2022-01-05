@@ -14,11 +14,14 @@ enemy_images = {
 }
 
 
-class Enemy:
+class Enemy(pygame.sprite.Sprite):
     """
     класс проработки противников
     """
-    def __init__(self, path):
+    def __init__(self, path, enemy_type):
+        super().__init__(enemy_sprites, all_sprites)
+        self.image = enemy_images[enemy_type]  # выбор моба
+        self.rect = self.image.get_rect().move(self.spawn)  # располагаем моба на холсте
         self.path = path
         self.spawn = [path[0][0], path[0][1]]  # точка спавна врага
         self.finish = [path[-1][0], path[-1][1]]  # финиш пути врага (если враг дошел до сервера)
@@ -35,12 +38,3 @@ class Enemy:
 
     def move(self):
         count = 0
-
-
-class DrawEnemy(pygame.sprite.Sprite):
-    """класс обработки тайлов"""
-    def __init__(self, enemy_type, pos):
-        super().__init__(enemies_sprites, all_sprites)
-        self.image = enemy_images[enemy_type]  # выбор врага
-        self.rect = self.image.get_rect().move(pos[0], pos[1])  # располагаем врага на холсте
-

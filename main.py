@@ -1,9 +1,8 @@
 import pygame
 import pygame_gui
 import sys
-import os
-from data.enemies.enemy import Enemy, DrawEnemy
-from data.menu.menu import Menu
+# from data.enemies.enemy import Enemy
+# from data.menu.menu import Menu
 
 # создаём группы спрайтов
 all_sprites = pygame.sprite.Group()
@@ -29,6 +28,18 @@ def load_icon(name):  # функция для загрузки иконок
     image = pygame.image.load(fullname)
     return image
 
+
+def load_img(name):  # функция для загрузки иконок
+    fullname = f'data/enemies/img/{name}'
+    image = pygame.image.load(fullname)
+    return image
+
+
+# словарь с тайлами игрового поля
+enemy_images = {
+    'easy_enemy': load_img('easy.png'),
+    'normal_enemy': load_img('normal.png')
+}
 
 # словарь с тайлами игрового поля
 tile_images = {
@@ -86,8 +97,12 @@ class Game:
                         self.pause_off()
                     if not self.pause:
                         self.pause_on()
+                if event.type == pygame.K_SPACE:
+                    Enemy('easy_enemy').draw(self.win)
 
             all_sprites.draw(self.win)
+            enemies_sprites.draw(self.win)
+            all_sprites.update()
 
             pygame.display.flip()
             self.clock.tick(self.fps)
@@ -396,6 +411,47 @@ class Icon(pygame.sprite.Sprite):
         self.image = icons_images[icon_type]  # выбор иконки
         self.rect = self.image.get_rect().move(
             50 * pos_x, 50 * pos_y)  # располагаем иконку на холсте
+
+
+class Enemy(pygame.sprite.Sprite):
+    """
+    класс проработки противников
+    """
+    def __init__(self, enemy_type):
+        super().__init__(enemies_sprites, all_sprites)
+        self.image = enemy_images[enemy_type]  # выбор моба
+        self.path = [[175, 75], [225, 75], [275, 75], [325, 75], [-25, 125], [25, 125], [75, 125], [125, 125], [175, 125], [325, 125], [75, 175], [175, 175], [225, 175], [325, 175], [375, 175], [75, 225], [175, 225], [325, 225], [25, 275], [75, 275], [175, 275], [225, 275], [325, 275], [375, 275], [425, 275], [75, 325], [125, 325], [225, 325], [275, 325], [425, 325], [75, 375], [125, 375], [175, 375], [225, 375], [425, 375], [425, 425]]
+        self.spawn = [self.path[0][0], self.path[0][1]]  # точка спавна врага
+        self.finish = [self.path[-1][0], self.path[-1][1]]  # финиш пути врага (если враг дошел до сервера)
+        self.rect = self.image.get_rect().move(self.spawn)  # располагаем моба на холсте
+        self.hp = 1
+        self.max_hp = 5
+        self.dmg = 1
+        self.speed = 5
+        self.location = self.x, self.y = self.path[0][0], self.path[0][1]
+        self.size = self.width, self.height = 50, 50
+        self.death = False
+        # self.rect =
+        # self.img =
+        # self.animation =
+
+    def update(self):
+        self.rect.move(self.x + 1, self.y + 1)
+
+    def draw(self, win):
+        win.blit(self.image, self.spawn)
+        self.draw_health_bar(win)
+
+    def draw_health_bar(self, win):
+        length = 50
+        move_by = round(length / self.max_hp)
+        health_bar = move_by * self.hp
+
+        pygame.draw.rect(win, (255, 0, 0), (self.x - 30, self.y - 75, length, 10), 0)
+        pygame.draw.rect(win, (0, 255, 0), (self.x - 30, self.y - 75, health_bar, 10), 0)
+
+    def death(self):
+        pass
 
 
 if __name__ == '__main__':
