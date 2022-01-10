@@ -1,6 +1,7 @@
 import pygame
 import pygame_gui
 import sys
+import math
 # from data.enemies.enemy import Enemy
 # from data.menu.menu import Menu
 
@@ -10,6 +11,8 @@ enemies_sprites = pygame.sprite.Group()
 towers_sprites = pygame.sprite.Group()
 tiles_sprites = pygame.sprite.Group()
 icon_sprites = pygame.sprite.Group()
+
+path = []
 
 
 def terminate():  # функция для корректного выхода из программы
@@ -67,7 +70,6 @@ class Game:
         self.size = self.weight, self.height = 750, 550
         self.fps = 60
         self.bg_color = (26, 28, 44)
-        self.shop = pygame.Rect((0, 0), (550, 350))
         self.win = pygame.display.set_mode((self.weight, self.height))
         pygame.display.set_caption('Net Guardians')
         self.clock = pygame.time.Clock()
@@ -86,23 +88,36 @@ class Game:
     def run(self):  # основной игровой цикл
         running = True
         self.win.fill(self.bg_color)
-        level_x, level_y = self.draw_lvl(self.load_lvl('lvl_1.txt'))
+        self.draw_lvl(self.load_lvl('lvl_1.txt'))
+        enemies = []
+        wave = [[10, 0]]
+
+        for _ in range(wave[0][0]):
+            enemies.append(Enemy('easy_enemy'))
 
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
-                if event.type == pygame.K_ESCAPE:
-                    if self.pause:
-                        self.pause_off()
-                    if not self.pause:
-                        self.pause_on()
-                if event.type == pygame.K_SPACE:
-                    Enemy('easy_enemy').draw(self.win)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        if self.pause:
+                            print('unpause')
+                            self.pause_off()
+                        if not self.pause:
+                            print('pause')
+                            self.pause_on()
+                    if event.key == pygame.K_SPACE:
+                        print('ok')
+                        # enemy.draw(self.win)
+                        for enemy in enemies:
+                            enemy.draw(self.win)
+                            enemy.update()
 
             all_sprites.draw(self.win)
             enemies_sprites.draw(self.win)
             all_sprites.update()
+            enemies_sprites.update()
 
             pygame.display.flip()
             self.clock.tick(self.fps)
@@ -417,30 +432,64 @@ class Enemy(pygame.sprite.Sprite):
     """
     класс проработки противников
     """
-    def __init__(self, enemy_type):
+    def __init__(self, enemy_type, wave=0):
         super().__init__(enemies_sprites, all_sprites)
         self.image = enemy_images[enemy_type]  # выбор моба
-        self.path = [[175, 75], [225, 75], [275, 75], [325, 75], [-25, 125], [25, 125], [75, 125], [125, 125], [175, 125], [325, 125], [75, 175], [175, 175], [225, 175], [325, 175], [375, 175], [75, 225], [175, 225], [325, 225], [25, 275], [75, 275], [175, 275], [225, 275], [325, 275], [375, 275], [425, 275], [75, 325], [125, 325], [225, 325], [275, 325], [425, 325], [75, 375], [125, 375], [175, 375], [225, 375], [425, 375], [425, 425]]
+        self.path = [(477, 524), (473, 326), (372, 324), (377, 131), (224, 127), (221, 322), (280, 325), (273, 421), (123, 426), (126, 175), (29, 170)]
         self.spawn = [self.path[0][0], self.path[0][1]]  # точка спавна врага
         self.finish = [self.path[-1][0], self.path[-1][1]]  # финиш пути врага (если враг дошел до сервера)
-        self.rect = self.image.get_rect().move(self.spawn)  # располагаем моба на холсте
+        self.x, self.y = self.path[0][0], self.path[0][1]
+        self.location = 1
+        self.rect = self.image.get_rect().move(self.spawn[0] - 25, self.spawn[1] - 25)  # располагаем моба на холсте
         self.hp = 1
         self.max_hp = 5
         self.dmg = 1
         self.speed = 5
-        self.location = self.x, self.y = self.path[0][0], self.path[0][1]
+        self.cost = 10
         self.size = self.width, self.height = 50, 50
         self.death = False
-        # self.rect =
-        # self.img =
-        # self.animation =
+        self.flip = False
+        self.waves = wave
 
     def update(self):
-        self.rect.move(self.x + 1, self.y + 1)
+        # if self.flip:
+        #     self.flip = False
+        #     self.image = pygame.transform.flip(True, False)
+        move = self.mooving_calc(self.x, self.y, self.path[self.location][0], self.path[self.location][1])
+        self.x += self.speed * move[0]
+        self.y += self.speed * move[1]
+        #  движение мобов
+        if move[2] <= self.speed:
+            self.location += 1
+            # if self.point == len(self.path):
+            #     enemies.remove(self)
+
+        # for point in self.path:
+        #     for x in point[0]:
+        #         for y in point[1]:
+        #             if self.x > x:
+        #                 if self.y > y:
+        #                     pass
+        #                 if self.y < y:
+        #                     pass
+        #             if self.y > y:
+        #                 if self.x > x:
+        #                     pass
+        #                 if self.x < x:
+        #                     pass
+
+
+    def mooving_calc(self, x1, y1, x2, y2):
+        vec_x = x2 - x1
+        vec_y = y2 - y1
+        dist = math.sqrt(vec_x ** 2 + vec_y ** 2)
+        norm_vec_x = vec_x / dist
+        norm_vec_y = vec_y / dist
+        angle = math.atan2(norm_vec_y, norm_vec_x)
+        return norm_vec_x, norm_vec_y, dist, angle
 
     def draw(self, win):
-        win.blit(self.image, self.spawn)
-        self.draw_health_bar(win)
+        pygame.draw.circle(win, pygame.color.Color('red'), self.spawn, 10)
 
     def draw_health_bar(self, win):
         length = 50
