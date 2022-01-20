@@ -1,238 +1,140 @@
 import pygame
-import pygame_gui
+pygame.font.init()
 
 
-class Menu:
-    def __init__(self):
-        self.size = self.width, self.height = 1280, 720
-        self.win = pygame.display.set_mode(self.size)
-        pygame.display.set_caption('Net Guardians')
-        self.clock = pygame.time.Clock()
-        self.fps = 60
+def load_img(name):
+    fullname = f'data/menu/{name}'
+    image = pygame.image.load(fullname)
+    return image
 
-        pygame.mixer.init()
 
-        pygame.mixer.music.load('data/menu/bg_menu_music.mp3')
-        pygame.mixer.music.set_volume(0.1)
-        pygame.mixer.music.play(loops=-1)
+bitcoin = load_img('bitcoin.png')
+bitcoin2 = load_img('bitcoin2.png')
 
-        self.select_snd = pygame.mixer.Sound('data/menu/select.mp3')
-        self.select_snd.set_volume(0.2)
 
-    def start_screen(self):
-        pygame.init()
-        pygame.mixer.init()
+class Button:
+    """
+    Button class for menu objects
+    """
+    def __init__(self, menu, img, name):
+        self.name = name
+        self.img = img
+        self.x = menu.x - 50
+        self.y = menu.y - 110
+        self.menu = menu
+        self.width = self.img.get_width()
+        self.height = self.img.get_height()
 
-        fon = pygame.transform.scale(pygame.image.load('data/fon.png'), (self.width, self.height))
-        self.win.blit(fon, (0, 0))
+    def click(self, X, Y):
+        """
+        returns if the positon has collided with the menu
+        :param X: int
+        :param Y: int
+        :return: bool
+        """
+        if X <= self.x + self.width and X >= self.x:
+            if Y <= self.y + self.height and Y >= self.y:
+                return True
+        return False
 
-        manager = pygame_gui.UIManager((1280, 720), 'data/menu/theme.json')
+    def draw(self, win):
+        win.blit(self.img, (self.x, self.y))
 
-        select_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 275), (290, 60)),
-                                                    text='SELECT LEVEL',
-                                                    manager=manager)
-        story_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 335), (290, 60)),
-                                                     text='MAIN STORY',
-                                                     manager=manager)
-        howtoplay_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 395), (290, 60)),
-                                                     text='HOW TO PLAY',
-                                                     manager=manager)
-        leaderboard_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 455), (290, 60)),
-                                                     text='LEADERBOARD',
-                                                     manager=manager)
-        exit_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
-                                                     text='EXIT',
-                                                     manager=manager)
+    def update(self):
 
-        running = True
+        self.x = self.menu.x - 50
+        self.y = self.menu.y - 110
 
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    terminate()
-                if event.type == pygame.USEREVENT:
-                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                        if event.ui_element == select_button:
-                            self.select_snd.play()
-                            self.select_level()
-                            terminate()
-                        if event.ui_element == story_button:
-                            self.select_snd.play()
-                            self.story()
-                            terminate()
-                        if event.ui_element == howtoplay_button:
-                            self.select_snd.play()
-                            self.how_to_play()
-                            terminate()
-                        if event.ui_element == leaderboard_button:
-                            self.select_snd.play()
-                            self.leaderboard()
-                            terminate()
-                        if event.ui_element == exit_button:
-                            self.select_snd.play()
-                            terminate()
 
-                manager.process_events(event)
+    def draw(self, win):
+        if self.paused:
+            win.blit(self.play, (self.x, self.y))
+        else:
+            win.blit(self.pause, (self.x, self.y))
 
-            manager.update(self.clock.tick(self.fps))
 
-            self.win.blit(fon, (0, 0))
-            manager.draw_ui(self.win)
+class VerticalButton(Button):
 
-            pygame.display.update()
+    def __init__(self, x, y, img, name, cost):
+        self.name = name
+        self.img = img
+        self.x = x
+        self.y = y
+        self.width = self.img.get_width()
+        self.height = self.img.get_height()
+        self.cost = cost
 
-    def leaderboard(self):
-        pygame.init()
 
-        fon = pygame.transform.scale(pygame.image.load('data/other_win.png'), (self.width, self.height))
-        self.win.blit(fon, (0, 0))
+class MenuForTowers:
 
-        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
+    def __init__(self, tower, x, y, img, item_cost):
+        self.x = x
+        self.y = y
+        self.width = img.get_width()
+        self.height = img.get_height()
+        self.item_cost = item_cost
+        self.buttons = []
+        self.items = 0
+        self.bg = img
+        self.font = pygame.font.SysFont("comicsans", 25)
+        self.tower = tower
 
-        test_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 375), (290, 60)),
-                                                   text='Leaderboard в разработке',
-                                                   manager=manager)
+    def add_btn(self, img, name):
+        self.items += 1
+        self.buttons.append(Button(self, img, name))
 
-        back_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
-                                                   text='BACK',
-                                                   manager=manager)
+    def get_item_cost(self):
+        return self.item_cost[self.tower.level - 1]
 
-        running = True
+    def draw(self, win):
+        win.blit(self.bg, (self.x - self.bg.get_width()/2, self.y-120))
+        for item in self.buttons:
+            item.draw(win)
+            win.blit(bitcoin, (item.x + item.width + 5, item.y-9))
+            text = self.font.render(str(self.item_cost[self.tower.level - 1]), 1, (255,255,255))
+            win.blit(text, (item.x + item.width + 30 - text.get_width()/2, item.y + bitcoin.get_height() -8))
 
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    terminate()
-                if event.type == pygame.USEREVENT:
-                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                        if event.ui_element == back_button:
-                            self.select_snd.play()
-                            self.start_screen()
-                            terminate()
+    def get_clicked(self, x, y):
+        for btn in self.buttons:
+            if btn.click(x, y):
+                return btn.name
 
-                manager.process_events(event)
+        return None
 
-            manager.update(self.clock.tick(self.fps))
+    def update(self):
+        for btn in self.buttons:
+            btn.update()
 
-            self.win.blit(fon, (0, 0))
-            manager.draw_ui(self.win)
 
-            pygame.display.update()
+class VerticalMenu(MenuForTowers):
+    def __init__(self, x, y, img):
+        self.x = x
+        self.y = y
+        self.width = img.get_width()
+        self.height = img.get_height()
+        self.buttons = []
+        self.items = 0
+        self.bg = img
+        self.font = pygame.font.SysFont("comicsans", 25)
 
-    def select_level(self):
-        pygame.init()
+    def add_btn(self, img, name, cost):
+        self.items += 1
+        btn_x = self.x - 40
+        btn_y = self.y-100 + (self.items-1)*120
+        self.buttons.append(VerticalButton(btn_x, btn_y, img, name, cost))
 
-        fon = pygame.transform.scale(pygame.image.load('data/other_win.png'), (self.width, self.height))
-        self.win.blit(fon, (0, 0))
+    def get_item_cost(self, name):
 
-        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
+        for btn in self.buttons:
+            if btn.name == name:
+                return btn.cost
+        return -1
 
-        level_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 375), (290, 60)),
-                                                   text='Level 1',
-                                                   manager=manager)
+    def draw(self, win):
 
-        back_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
-                                                   text='BACK',
-                                                   manager=manager)
-
-        running = True
-
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    terminate()
-                if event.type == pygame.USEREVENT:
-                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                        if event.ui_element == back_button:
-                            self.select_snd.play()
-                            self.start_screen()
-                            terminate()
-                        if event.ui_element == level_button:
-                            self.select_snd.play()
-                            pygame.mixer.music.stop()
-                            Game().run()
-                            terminate()
-
-                manager.process_events(event)
-
-            manager.update(self.clock.tick(self.fps))
-
-            self.win.blit(fon, (0, 0))
-            manager.draw_ui(self.win)
-
-            pygame.display.update()
-
-    def how_to_play(self):
-        pygame.init()
-
-        fon = pygame.transform.scale(pygame.image.load('data/other_win.png'), (self.width, self.height))
-        self.win.blit(fon, (0, 0))
-
-        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
-
-        test_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 375), (290, 60)),
-                                                   text='How to play в разработке',
-                                                   manager=manager)
-
-        back_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
-                                                   text='BACK',
-                                                   manager=manager)
-
-        running = True
-
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    terminate()
-                if event.type == pygame.USEREVENT:
-                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                        if event.ui_element == back_button:
-                            self.select_snd.play()
-                            self.start_screen()
-                            terminate()
-
-                manager.process_events(event)
-
-            manager.update(self.clock.tick(self.fps))
-
-            self.win.blit(fon, (0, 0))
-            manager.draw_ui(self.win)
-
-            pygame.display.update()
-
-    def story(self):
-        pygame.init()
-
-        fon = pygame.transform.scale(pygame.image.load('data/other_win.png'), (self.width, self.height))
-        self.win.blit(fon, (0, 0))
-
-        manager = pygame_gui.UIManager((800, 600), 'data/menu/theme.json')
-
-        test_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 375), (290, 60)),
-                                                   text='please stand by',
-                                                   manager=manager)
-
-        back_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 515), (290, 60)),
-                                                   text='BACK',
-                                                   manager=manager)
-
-        running = True
-
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    terminate()
-                if event.type == pygame.USEREVENT:
-                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                        if event.ui_element == back_button:
-                            self.select_snd.play()
-                            self.start_screen()
-                            terminate()
-                manager.process_events(event)
-
-            manager.update(self.clock.tick(self.fps))
-
-            self.win.blit(fon, (0, 0))
-            manager.draw_ui(self.win)
-
-            pygame.display.update()
+        win.blit(self.bg, (self.x - self.bg.get_width()/2, self.y-120))
+        for item in self.buttons:
+            item.draw(win)
+            win.blit(bitcoin2, (item.x+2, item.y + item.height))
+            text = self.font.render(str(item.cost), 1, (255,255,255))
+            win.blit(text, (item.x + item.width/2 - text.get_width()/2 + 7, item.y + item.height + 5))
