@@ -2,8 +2,6 @@ import pygame
 import pygame_gui
 import sys
 import math
-import os
-from data.menu.menu import VerticalMenu
 # from data.enemies.enemy import Enemy
 # from data.menu.menu import Menu
 
@@ -34,8 +32,8 @@ def load_icon(name):  # функция для загрузки иконок
     return image
 
 
-def load_img(name):  # функция для загрузки иконок
-    fullname = f'data/enemies/img/{name}'
+def load_img(name, full=f'data/enemies/img/'):  # функция для загрузки иконок
+    fullname = full + name
     image = pygame.image.load(fullname)
     return image
 
@@ -63,25 +61,31 @@ icons_images = {
 }
 
 
+enemies = []
+cell_size = 50
+
+
 class Game:
     """
     основной игровой класс
     """
     def __init__(self):
         #  создаём окно с уровнем
-        self.size = self.weight, self.height = 750, 550
+        self.size = self.width, self.height = 750, 550
         self.fps = 60
         self.bg_color = (26, 28, 44)
-        self.win = pygame.display.set_mode((self.weight, self.height))
+        self.win = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Net Guardians')
         self.clock = pygame.time.Clock()
         self.pause = False
 
-        self.menu = VerticalMenu(self.width - side_img.get_width() + 70, 250, side_img)
+        self.tower_img = load_img('turret.png', f'data/towers/')
+
+        self.place_for_towers =[]
 
         self.path_for_enemies = []  # список с координатами пути врагов
 
-        self.manager = pygame_gui.UIManager((self.weight, self.height), 'data/menu/theme.json')  # создание gui
+        self.manager = pygame_gui.UIManager((self.width, self.height), 'data/menu/theme.json')  # создание gui
 
         # подключаем звуковое сопровождение
         pygame.mixer.init()
@@ -93,11 +97,13 @@ class Game:
         running = True
         self.win.fill(self.bg_color)
         self.draw_lvl(self.load_lvl('lvl_1.txt'))
-        enemies = []
         wave = [[10, 0]]
 
-        for _ in range(wave[0][0]):
+        for _ in range(1):
             enemies.append(Enemy('easy_enemy'))
+
+        # tiles_sprites.draw(self.win)
+        # icon_sprites.draw(self.win)
 
         while running:
             for event in pygame.event.get():
@@ -111,19 +117,13 @@ class Game:
                         if not self.pause:
                             print('pause')
                             self.pause_on()
-                    # if event.key == pygame.K_SPACE:
-                    #     print('ok')
-                    #     # enemy.draw(self.win)
-                    #     for enemy in enemies:
-                    #         enemy.draw(self.win)
-                    #         enemy.update()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    Tower.draw(self, self.win)
 
             for enemy in enemies:
                 enemy.draw(self.win)
                 enemy.update()
 
-            all_sprites.draw(self.win)
-            enemies_sprites.draw(self.win)
             all_sprites.update()
             enemies_sprites.update()
 
@@ -167,6 +167,7 @@ class Game:
                 elif lvl_map[x][y] == '@':
                     Tile('wall', x, y)
                     Icon('can_build', x, y)
+                    self.place_for_towers.append([x * 50 - 25, y * 50 - 25])
                 elif lvl_map[x][y] == '!':
                     Tile('way', x, y)
                     Icon('monster_portal', x, y)
@@ -444,21 +445,28 @@ class Enemy(pygame.sprite.Sprite):
                      (273, 421), (123, 426), (126, 175), (29, 170)]
         self.spawn = [self.path[0][0], self.path[0][1]]  # точка спавна врага
         self.finish = [self.path[-1][0], self.path[-1][1]]  # финиш пути врага (если враг дошел до сервера)
-        self.rect = self.image.get_rect().move(self.spawn[0] - 25, self.spawn[1] - 25)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = self.spawn[0] - 25
+        self.rect.y = self.spawn[1] - 25
+
         self.x = self.path[0][0]
         self.y = self.path[0][1]
         self.size = 50
-        self.health = 5
-        self.speed = 1
+        self.hp = 5
+        self.max_hp = 5
+        self.speed = 0.3
         self.point = 1
         self.reward = 10
 
     def update(self):
-        move = self.mooving_calc(self.x, self.y, self.path[self.point][0], self.path[self.point][1])
-        self.x += self.speed * move[0]
-        self.y += self.speed * move[1]
+        move = self.mooving_calc(self.rect.x, self.rect.y, self.path[self.point][0], self.path[self.point][1])
+        self.rect.x += self.speed * move[0]
+        self.rect.y += self.speed * move[1]
         if move[2] <= self.speed:
             self.point += 1
+            if self.point == len(self.path):
+                self.point = 1
 
     def mooving_calc(self, x1, y1, x2, y2):
         vec_x = x2 - x1
@@ -470,7 +478,8 @@ class Enemy(pygame.sprite.Sprite):
         return norm_vec_x, norm_vec_y, dist, angle
 
     def draw(self, win):
-        pygame.draw.circle(win, pygame.color.Color('red'), [self.x, self.y], self.size)
+        win.blit(self.image, (self.x - self.image.get_width() / 2, self.y - self.image.get_height() / 2 - 35))
+        self.draw_health_bar(win)
 
     def draw_health_bar(self, win):
         length = 50
@@ -490,29 +499,29 @@ class Tower:
         self.y = y
         self.width = 0
         self.height = 0
-        self.sell_price = [0, 0, 0]
-        self.price = [0, 0, 0]
-        self.level = 1
-        self.selected = False
 
-        self.menu = Menu(self, self.x, self.y, side_img, [2000, "MAX"])
-
-        self.tower_imgs = []
+        self.tower_img = load_img('turret.png', f'data/towers/')
         self.damage = 1
+
+        self.selected = False
 
         self.place_color = (0, 0, 255, 100)
 
-    def draw(self, win):
-        """
-        draws the tower
-        :param win: surface
-        :return: None
-        """
-        img = self.tower_imgs[self.level - 1]
-        win.blit(img, (self.x-img.get_width()//2, self.y-img.get_height()//2))
+    def bullet_calc(self, x1, y1, x2, y2):
+        vec_x = x2 - x1
+        vec_y = y2 - y1
+        dist = math.sqrt(vec_x ** 2 + vec_y ** 2)
+        norm_vec_x = vec_x / dist
+        norm_vec_y = vec_y / dist
+        angle = math.atan2(norm_vec_y, norm_vec_x)
+        return norm_vec_x, norm_vec_y, dist, angle
 
-        if self.selected:
-            self.menu.draw(win)
+    def draw(self, win):
+        mouse_pos = pygame.mouse.get_pos()
+        pos_x = math.floor(mouse_pos[0] / cell_size) * cell_size
+        pos_y = math.floor(mouse_pos[1] / cell_size) * cell_size
+        Tile('wall', self.x, self.y)
+        win.blit(self.tower_img, (self.x, self.y))
 
     def draw_radius(self, win):
         if self.selected:
@@ -521,67 +530,26 @@ class Tower:
 
             win.blit(surface, (self.x - self.range, self.y - self.range))
 
-    def draw_placement(self,win):
-        surface = pygame.Surface((self.range * 4, self.range * 4), pygame.SRCALPHA, 32)
-        pygame.draw.circle(surface, self.place_color, (50,50), 50, 0)
-
-        win.blit(surface, (self.x - 50, self.y - 50))
-
     def click(self, x, y):
-        img = self.tower_imgs[self.level - 1]
-        if x <= self.x - img.get_width()//2 + self.width and x >= self.x - img.get_width()//2:
-            if y <= self.y + self.height - img.get_height()//2 and y >= self.y - img.get_height()//2:
+        if x <= self.x - self.tower_img.get_width()//2 + self.width and x >= self.x - self.tower_img.get_width()//2:
+            if y <= self.y + self.height - self.tower_img.get_height()//2 and y >= self.y - self.tower_img.get_height()//2:
                 return True
         return False
 
-    def sell(self):
-        """
-        call to sell the tower, returns sell price
-        :return: int
-        """
-        return self.sell_price[self.level-1]
-
-    def upgrade(self):
-        """
-        upgrades the tower for a given cost
-        :return: None
-        """
-        if self.level < len(self.tower_imgs):
-            self.level += 1
-            self.damage += 1
-
-    def get_upgrade_cost(self):
-        """
-        returns the upgrade cost, if 0 then can't upgrade anymore
-        :return: int
-        """
-        return self.price[self.level-1]
-
     def move(self, x, y):
-        """
-        moves tower to given x and y
-        :param x: int
-        :param y: int
-        :return: None
-        """
         self.x = x
         self.y = y
-        self.menu.x = x
-        self.menu.y = y
-        self.menu.update()
 
-    def collide(self, otherTower):
-        x2 = otherTower.x
-        y2 = otherTower.y
-
-        dis = math.sqrt((x2 - self.x)**2 + (y2 - self.y)**2)
-        if dis >= 100:
-            return False
-        else:
-            return True
+    def attack(self):
+        pass
 
 
+class Bullet:
+    def __init__(self):
+        pass
 
+    def update(self):
+        pass
 
 
 if __name__ == '__main__':

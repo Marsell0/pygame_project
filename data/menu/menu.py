@@ -8,14 +8,12 @@ def load_img(name):
     return image
 
 
+side_img = load_img('menu_bg.png')
 bitcoin = load_img('bitcoin.png')
 bitcoin2 = load_img('bitcoin2.png')
 
 
 class Button:
-    """
-    Button class for menu objects
-    """
     def __init__(self, menu, img, name):
         self.name = name
         self.img = img
@@ -25,15 +23,9 @@ class Button:
         self.width = self.img.get_width()
         self.height = self.img.get_height()
 
-    def click(self, X, Y):
-        """
-        returns if the positon has collided with the menu
-        :param X: int
-        :param Y: int
-        :return: bool
-        """
-        if X <= self.x + self.width and X >= self.x:
-            if Y <= self.y + self.height and Y >= self.y:
+    def click(self, x, y):
+        if x <= self.x + self.width and x >= self.x:
+            if y <= self.y + self.height and y >= self.y:
                 return True
         return False
 
@@ -44,7 +36,6 @@ class Button:
 
         self.x = self.menu.x - 50
         self.y = self.menu.y - 110
-
 
     def draw(self, win):
         if self.paused:
