@@ -11,6 +11,7 @@ enemies_sprites = pygame.sprite.Group()
 towers_sprites = pygame.sprite.Group()
 tiles_sprites = pygame.sprite.Group()
 icon_sprites = pygame.sprite.Group()
+can_build_sprites = pygame.sprite.Group()
 
 path = []
 
@@ -102,8 +103,8 @@ class Game:
         for _ in range(1):
             enemies.append(Enemy('easy_enemy'))
 
-        # tiles_sprites.draw(self.win)
-        # icon_sprites.draw(self.win)
+        tiles_sprites.draw(self.win)
+        icon_sprites.draw(self.win)
 
         while running:
             for event in pygame.event.get():
@@ -125,7 +126,6 @@ class Game:
                 enemy.update()
 
             all_sprites.update()
-            enemies_sprites.update()
 
             pygame.display.flip()
             self.clock.tick(self.fps)
@@ -518,10 +518,7 @@ class Tower:
 
     def draw(self, win):
         mouse_pos = pygame.mouse.get_pos()
-        pos_x = math.floor(mouse_pos[0] / cell_size) * cell_size
-        pos_y = math.floor(mouse_pos[1] / cell_size) * cell_size
-        Tile('wall', self.x, self.y)
-        win.blit(self.tower_img, (self.x, self.y))
+        win.blit(self.tower_img, (mouse_pos[0] - self.tower_img.get_width() // 2, mouse_pos[1] - self.tower_img.get_height() // 2))
 
     def draw_radius(self, win):
         if self.selected:
