@@ -63,7 +63,36 @@ icons_images = {
 
 
 enemies = []
+towers = []
+bullets = []
 cell_size = 50
+
+
+def mooving_and_bullet_calc(x1, y1, x2, y2):
+    vec_x = (x2 + 10) - (x1 - 10)
+    vec_y = (y2 + 10) - (y1 - 10)
+    dist = math.sqrt(vec_x ** 2 + vec_y ** 2)
+    norm_vec_x = vec_x / dist
+    norm_vec_y = vec_y / dist
+    angle = math.atan2(norm_vec_y, norm_vec_x)
+    return norm_vec_x, norm_vec_y, dist, angle
+
+
+class Bullet:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.size = 2
+        self.color = pygame.color.Color('black')
+        self.damage = 5
+        self.speed = 15
+
+    def update(self, norm_vec_x, norm_vec_y):
+        self.x += self.speed * norm_vec_x
+        self.y += self.speed * norm_vec_y
+
+    def draw(self, win):
+        pygame.draw.circle(win, self.color, [self.x, self.y], self.size)
 
 
 class Game:
@@ -88,6 +117,17 @@ class Game:
 
         self.manager = pygame_gui.UIManager((self.width, self.height), 'data/menu/theme.json')  # создание gui
 
+        self.lives = 10
+        self.money = 50
+        self.lives_img = load_img('lives.png', f'data/menu/')
+        self.bitcoin_img = load_img('bitcoin.png', f'data/menu/')
+        self.font = pygame.font.SysFont('comicsans', 40)
+        self.tower_cost = 10
+
+        self.towers = []
+
+        # в draw_lvl после Icon('can_build')
+        self.place_for_towers.append([x * 50 + 50, y * 50 + 50])
         # подключаем звуковое сопровождение
         pygame.mixer.init()
         pygame.mixer.music.load('data/map/levels/bg_level_music.mp3')
@@ -100,13 +140,12 @@ class Game:
         self.draw_lvl(self.load_lvl('lvl_1.txt'))
         wave = [[10, 0]]
 
-        for _ in range(1):
+        for i in range(10):
             enemies.append(Enemy('easy_enemy'))
 
-        tiles_sprites.draw(self.win)
-        icon_sprites.draw(self.win)
-
         while running:
+
+            towers_sprites.draw(self.win)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
@@ -119,15 +158,40 @@ class Game:
                             print('pause')
                             self.pause_on()
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    Tower.draw(self, self.win)
+                    # не трогай, работает
+                    mouse_pos = pygame.mouse.get_pos()
+                    for place in self.place_for_towers:
+                        if place[0] - 50 < mouse_pos[0] < place[0] and place[1] - 50 < mouse_pos[1] < place[1]:
+                            if self.money >= self.tower_cost:
+                                self.money -= self.tower_cost
+                                print(place, mouse_pos)
+                                towers.append(Tower(place))
+
+            tiles_sprites.draw(self.win)
+            icon_sprites.draw(self.win)
+
+            for tower in towers:
+                tower.shoot()
+                tower.draw(self.win)
+
+            for bullet in bullets:
+                vec = mooving_and_bullet_calc(bullet.x, bullet.y, enemies[0].x, enemies[0].y)
+                bullet.update(vec[0], vec[1])
+                if vec[2] - 25 <= bullet.speed:
+                    bullets.remove(bullet)
+                    enemies[0].hp -= bullet.damage
+                bullet.draw(self.win)
 
             for enemy in enemies:
-                enemy.draw(self.win)
                 enemy.update()
+                enemy.draw(self.win)
 
             all_sprites.update()
 
+            enemies_sprites.update()
+
             pygame.display.flip()
+            self.draw_money_lives()
             self.clock.tick(self.fps)
 
         terminate()
@@ -167,7 +231,7 @@ class Game:
                 elif lvl_map[x][y] == '@':
                     Tile('wall', x, y)
                     Icon('can_build', x, y)
-                    self.place_for_towers.append([x * 50 - 25, y * 50 - 25])
+                    self.place_for_towers.append([x * 50 + 50, y * 50 + 50])
                 elif lvl_map[x][y] == '!':
                     Tile('way', x, y)
                     Icon('monster_portal', x, y)
@@ -460,13 +524,13 @@ class Enemy(pygame.sprite.Sprite):
         self.reward = 10
 
     def update(self):
-        move = self.mooving_calc(self.rect.x, self.rect.y, self.path[self.point][0], self.path[self.point][1])
-        self.rect.x += self.speed * move[0]
-        self.rect.y += self.speed * move[1]
+        move = mooving_and_bullet_calc(self.x, self.y, self.path[self.point][0], self.path[self.point][1])
+        self.x += self.speed * move[0]
+        self.y += self.speed * move[1]
         if move[2] <= self.speed:
             self.point += 1
             if self.point == len(self.path):
-                self.point = 1
+                enemies.remove(self)
 
     def mooving_calc(self, x1, y1, x2, y2):
         vec_x = x2 - x1
@@ -494,59 +558,50 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class Tower:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.width = 0
-        self.height = 0
-
+    def __init__(self, place):
         self.tower_img = load_img('turret.png', f'data/towers/')
-        self.damage = 1
+        self.rect = self.tower_img.get_rect()
+        self.x = place[0]
+        self.y = place[1]
 
+        self.fire_rate = 2
+        self.radius = 180
+        self.fire_rate_tick = 0
         self.selected = False
 
         self.place_color = (0, 0, 255, 100)
 
-    def bullet_calc(self, x1, y1, x2, y2):
-        vec_x = x2 - x1
-        vec_y = y2 - y1
-        dist = math.sqrt(vec_x ** 2 + vec_y ** 2)
-        norm_vec_x = vec_x / dist
-        norm_vec_y = vec_y / dist
-        angle = math.atan2(norm_vec_y, norm_vec_x)
-        return norm_vec_x, norm_vec_y, dist, angle
-
-    def draw(self, win):
-        mouse_pos = pygame.mouse.get_pos()
-        win.blit(self.tower_img, (mouse_pos[0] - self.tower_img.get_width() // 2, mouse_pos[1] - self.tower_img.get_height() // 2))
-
-    def draw_radius(self, win):
-        if self.selected:
-            surface = pygame.Surface((self.range * 4, self.range * 4), pygame.SRCALPHA, 32)
-            pygame.draw.circle(surface, (128, 128, 128, 100), (self.range, self.range), self.range, 0)
-
-            win.blit(surface, (self.x - self.range, self.y - self.range))
-
-    def click(self, x, y):
-        if x <= self.x - self.tower_img.get_width()//2 + self.width and x >= self.x - self.tower_img.get_width()//2:
-            if y <= self.y + self.height - self.tower_img.get_height()//2 and y >= self.y - self.tower_img.get_height()//2:
-                return True
-        return False
-
-    def move(self, x, y):
-        self.x = x
-        self.y = y
-
-    def attack(self):
-        pass
-
-
-class Bullet:
-    def __init__(self):
-        pass
+    def shoot(self):
+        vec = mooving_and_bullet_calc(self.x, self.y, enemies[0].x, enemies[0].y)
+        if self.fire_rate_tick <= 0 and vec[2] < self.radius:
+            bullets.append(Bullet(self.x - 25, self.y - 25))
+            self.fire_rate_tick = self.fire_rate
+        else:
+            self.fire_rate_tick -= 1 / 30
 
     def update(self):
         pass
+
+    def draw(self, win):
+        win.blit(self.tower_img, (self.x - 50, self.y - 50))
+
+
+class Bullet:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.size = 2
+        self.color = pygame.color.Color('black')
+        self.damage = 5
+        self.speed = 15
+
+    def update(self, norm_vec_x, norm_vec_y):
+        self.x += self.speed * norm_vec_x
+        self.y += self.speed * norm_vec_y
+
+    def draw(self, win):
+        pygame.draw.circle(win, self.color, [self.x, self.y], self.size)
+
 
 
 if __name__ == '__main__':
