@@ -126,8 +126,6 @@ class Game:
 
         self.towers = []
 
-        # в draw_lvl после Icon('can_build')
-        self.place_for_towers.append([x * 50 + 50, y * 50 + 50])
         # подключаем звуковое сопровождение
         pygame.mixer.init()
         pygame.mixer.music.load('data/map/levels/bg_level_music.mp3')
@@ -196,8 +194,24 @@ class Game:
 
         terminate()
 
-    def shop(self):
-        pass
+    def draw_money_lives(self):
+        self.win.blit(self.win, (0, 0))
+        # draw lives
+        text = self.font.render(str(self.lives), 1, (255, 255, 255))
+        life = pygame.transform.scale(self.lives_img, (50, 50))
+        start_x = self.width - life.get_width() - 10
+
+        self.win.blit(text, (start_x - text.get_width() - 10, 13))
+        self.win.blit(text, (start_x - text.get_width() - 10, 13))
+        self.win.blit(life, (start_x, 10))
+
+        # draw money
+        text = self.font.render(str(self.money), 1, (255, 255, 255))
+        money = pygame.transform.scale(self.bitcoin_img, (50, 50))
+        start_x = self.width - life.get_width() - 10
+
+        self.win.blit(text, (start_x - text.get_width() - 10, 75))
+        self.win.blit(money, (start_x, 75))
 
     def pause_on(self):
         select_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((100, 275), (290, 60)),
@@ -584,24 +598,6 @@ class Tower:
 
     def draw(self, win):
         win.blit(self.tower_img, (self.x - 50, self.y - 50))
-
-
-class Bullet:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.size = 2
-        self.color = pygame.color.Color('black')
-        self.damage = 5
-        self.speed = 15
-
-    def update(self, norm_vec_x, norm_vec_y):
-        self.x += self.speed * norm_vec_x
-        self.y += self.speed * norm_vec_y
-
-    def draw(self, win):
-        pygame.draw.circle(win, self.color, [self.x, self.y], self.size)
-
 
 
 if __name__ == '__main__':
