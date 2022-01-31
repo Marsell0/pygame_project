@@ -1,3 +1,5 @@
+import random
+import time
 import pygame
 import pygame_gui
 import sys
@@ -84,7 +86,7 @@ class Bullet:
         self.y = y
         self.size = 2
         self.color = pygame.color.Color('black')
-        self.damage = 5
+        self.damage = 3
         self.speed = 15
 
     def update(self, norm_vec_x, norm_vec_y):
@@ -101,7 +103,7 @@ class Game:
     """
     def __init__(self):
         #  создаём окно с уровнем
-        self.size = self.width, self.height = 750, 550
+        self.size = self.width, self.height = 550, 550
         self.fps = 60
         self.bg_color = (26, 28, 44)
         self.win = pygame.display.set_mode((self.width, self.height))
@@ -111,18 +113,20 @@ class Game:
 
         self.tower_img = load_img('turret.png', f'data/towers/')
 
-        self.place_for_towers =[]
+        self.place_for_towers = []
 
         self.path_for_enemies = []  # список с координатами пути врагов
 
         self.manager = pygame_gui.UIManager((self.width, self.height), 'data/menu/theme.json')  # создание gui
 
         self.lives = 10
-        self.money = 50
+        self.money = 30
         self.lives_img = load_img('lives.png', f'data/menu/')
         self.bitcoin_img = load_img('bitcoin.png', f'data/menu/')
         self.font = pygame.font.SysFont('comicsans', 40)
-        self.tower_cost = 10
+        self.tower_cost = 15
+
+        self.timer = time.time()
 
         self.towers = []
 
@@ -136,12 +140,18 @@ class Game:
         running = True
         self.win.fill(self.bg_color)
         self.draw_lvl(self.load_lvl('lvl_1.txt'))
-        wave = [[10, 0]]
+        wave = 10
+        count = 0
 
-        for i in range(10):
-            enemies.append(Enemy('easy_enemy'))
+        # for i in range(wave):
+        #     enemies.append(Enemy('easy_enemy'))
 
         while running:
+            if time.time() - self.timer >= random.randrange(1, 3):
+                self.timer = time.time()
+                if count < wave:
+                    count += 1
+                    enemies.append(Enemy('easy_enemy'))
 
             towers_sprites.draw(self.win)
             for event in pygame.event.get():
@@ -167,36 +177,46 @@ class Game:
 
             tiles_sprites.draw(self.win)
             icon_sprites.draw(self.win)
+            self.draw_money_lives()
 
             for tower in towers:
-                tower.shoot()
+                if len(enemies) > 0:
+                    tower.shoot()
                 tower.draw(self.win)
 
             for bullet in bullets:
                 vec = mooving_and_bullet_calc(bullet.x, bullet.y, enemies[0].x, enemies[0].y)
                 bullet.update(vec[0], vec[1])
-                if vec[2] - 25 <= bullet.speed:
+                if vec[2] <= bullet.speed:
                     bullets.remove(bullet)
                     enemies[0].hp -= bullet.damage
                 bullet.draw(self.win)
 
             for enemy in enemies:
+                if enemy.death():
+                    enemies.remove(enemy)
+                    self.money += 4
+                if enemy.location == self.path_for_enemies[-2]:
+                    enemies.remove(enemy)
+                    self.lives -= 1
                 enemy.update()
                 enemy.draw(self.win)
+
+            if self.lives == 0:
+                Menu().start_screen()
+                pygame.quit()
 
             all_sprites.update()
 
             enemies_sprites.update()
 
             pygame.display.flip()
-            self.draw_money_lives()
             self.clock.tick(self.fps)
 
         terminate()
 
     def draw_money_lives(self):
-        self.win.blit(self.win, (0, 0))
-        # draw lives
+        # self.win.blit(self.win, (0, 0))
         text = self.font.render(str(self.lives), 1, (255, 255, 255))
         life = pygame.transform.scale(self.lives_img, (50, 50))
         start_x = self.width - life.get_width() - 10
@@ -205,7 +225,6 @@ class Game:
         self.win.blit(text, (start_x - text.get_width() - 10, 13))
         self.win.blit(life, (start_x, 10))
 
-        # draw money
         text = self.font.render(str(self.money), 1, (255, 255, 255))
         money = pygame.transform.scale(self.bitcoin_img, (50, 50))
         start_x = self.width - life.get_width() - 10
@@ -528,12 +547,11 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x = self.spawn[0] - 25
         self.rect.y = self.spawn[1] - 25
 
-        self.x = self.path[0][0]
-        self.y = self.path[0][1]
+        self.location = self.x,  self.y = self.path[0][0], self.path[0][1]
         self.size = 50
-        self.hp = 5
-        self.max_hp = 5
-        self.speed = 0.3
+        self.hp = 12
+        self.max_hp = 12
+        self.speed = 1
         self.point = 1
         self.reward = 10
 
@@ -541,19 +559,11 @@ class Enemy(pygame.sprite.Sprite):
         move = mooving_and_bullet_calc(self.x, self.y, self.path[self.point][0], self.path[self.point][1])
         self.x += self.speed * move[0]
         self.y += self.speed * move[1]
+        self.location = self.x, self.y
         if move[2] <= self.speed:
             self.point += 1
             if self.point == len(self.path):
                 enemies.remove(self)
-
-    def mooving_calc(self, x1, y1, x2, y2):
-        vec_x = x2 - x1
-        vec_y = y2 - y1
-        dist = math.sqrt(vec_x ** 2 + vec_y ** 2)
-        norm_vec_x = vec_x / dist
-        norm_vec_y = vec_y / dist
-        angle = math.atan2(norm_vec_y, norm_vec_x)
-        return norm_vec_x, norm_vec_y, dist, angle
 
     def draw(self, win):
         win.blit(self.image, (self.x - self.image.get_width() / 2, self.y - self.image.get_height() / 2 - 35))
@@ -568,7 +578,8 @@ class Enemy(pygame.sprite.Sprite):
         pygame.draw.rect(win, (0, 255, 0), (self.x - 30, self.y - 75, health_bar, 10), 0)
 
     def death(self):
-        pass
+        if self.hp <= 0:
+            return True
 
 
 class Tower:
@@ -578,7 +589,7 @@ class Tower:
         self.x = place[0]
         self.y = place[1]
 
-        self.fire_rate = 2
+        self.fire_rate = 3
         self.radius = 180
         self.fire_rate_tick = 0
         self.selected = False
