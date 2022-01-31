@@ -196,7 +196,7 @@ class Game:
                 if enemy.death():
                     enemies.remove(enemy)
                     self.money += 4
-                if enemy.location == self.path_for_enemies[-2]:
+                if enemy.finish_way():
                     enemies.remove(enemy)
                     self.lives -= 1
                 enemy.update()
@@ -556,14 +556,14 @@ class Enemy(pygame.sprite.Sprite):
         self.reward = 10
 
     def update(self):
-        move = mooving_and_bullet_calc(self.x, self.y, self.path[self.point][0], self.path[self.point][1])
-        self.x += self.speed * move[0]
-        self.y += self.speed * move[1]
-        self.location = self.x, self.y
-        if move[2] <= self.speed:
-            self.point += 1
-            if self.point == len(self.path):
-                enemies.remove(self)
+        try:
+            move = mooving_and_bullet_calc(self.x, self.y, self.path[self.point][0], self.path[self.point][1])
+            self.x += self.speed * move[0]
+            self.y += self.speed * move[1]
+            if move[2] <= self.speed:
+                self.point += 1
+        except:
+            print('почини меня')
 
     def draw(self, win):
         win.blit(self.image, (self.x - self.image.get_width() / 2, self.y - self.image.get_height() / 2 - 35))
@@ -579,6 +579,10 @@ class Enemy(pygame.sprite.Sprite):
 
     def death(self):
         if self.hp <= 0:
+            return True
+
+    def finish_way(self):
+        if self.point == len(self.path):
             return True
 
 
