@@ -107,7 +107,7 @@ class Game:
         self.fps = 60
         self.bg_color = (26, 28, 44)
         self.win = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption('Net Guardians')
+        pygame.display.set_caption('Demo')
         self.clock = pygame.time.Clock()
         self.pause = False
 
@@ -140,18 +140,17 @@ class Game:
         running = True
         self.win.fill(self.bg_color)
         self.draw_lvl(self.load_lvl('lvl_1.txt'))
-        wave = 10
+        wave = [10]
         count = 0
-
-        # for i in range(wave):
-        #     enemies.append(Enemy('easy_enemy'))
+        off = False
 
         while running:
-            if time.time() - self.timer >= random.randrange(1, 3):
-                self.timer = time.time()
-                if count < wave:
-                    count += 1
-                    enemies.append(Enemy('easy_enemy'))
+            for size in wave:
+                if time.time() - self.timer >= random.randrange(1, 3):
+                    self.timer = time.time()
+                    if count < size:
+                        count += 1
+                        enemies.append(Enemy('easy_enemy'))
 
             towers_sprites.draw(self.win)
             for event in pygame.event.get():
@@ -195,12 +194,16 @@ class Game:
             for enemy in enemies:
                 if enemy.death():
                     enemies.remove(enemy)
-                    self.money += 4
+                    self.money += 5
                 if enemy.finish_way():
                     enemies.remove(enemy)
                     self.lives -= 1
                 enemy.update()
                 enemy.draw(self.win)
+
+            if count == 10 and len(enemies) == 0:
+                Menu().start_screen()
+                pygame.quit()
 
             if self.lives == 0:
                 Menu().start_screen()
@@ -551,7 +554,7 @@ class Enemy(pygame.sprite.Sprite):
         self.size = 50
         self.hp = 12
         self.max_hp = 12
-        self.speed = 1
+        self.speed = 0.5
         self.point = 1
         self.reward = 10
 
@@ -563,7 +566,7 @@ class Enemy(pygame.sprite.Sprite):
             if move[2] <= self.speed:
                 self.point += 1
         except:
-            print('почини меня')
+            pass
 
     def draw(self, win):
         win.blit(self.image, (self.x - self.image.get_width() / 2, self.y - self.image.get_height() / 2 - 35))
